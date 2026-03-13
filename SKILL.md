@@ -1,17 +1,55 @@
----
+***
+
 name: outlook-pywin32
 description: "通过pywin32本地操作Outlook的命令行工具。支持邮件管理、日历管理等功能。使用命令: outlook-pywin32.py <方法名> --参数 值"
----
+----------------------------------------------------------------------------------------------
 
 # Outlook PyWin32 命令行工具
 
-基于pywin32的Outlook本地自动化工具，无需OAuth，直接操作本地Outlook。
+## 版本更新
+
+### v0.7
+
+**新增功能：**
+
+- 添加 `calendar-edit` 方法，支持修改日程安排事件
+- 支持通过主题或开始时间搜索日程
+- 支持修改日程的各种属性（主题、时间、地点、参与人等）
+- 修改后仅保存，不发送通知
+
+**修复的bug：**
+
+- 修复了 `calendar-list` 和 `calendar-edit` 方法中当指定账户不存在时的错误
+- 优化了时间匹配逻辑，提高搜索可靠性
 
 ## 前提条件
 
+基于pywin32的Outlook本地自动化工具，无需OAuth，直接操作本地Outlook。
+
+无论使用哪种安装方法，都需要满足以下条件：
+
 - Windows系统
 - 已安装Outlook客户端
-- Python + pywin32 (`pip install pywin32`)
+- Python 3.7+
+- pywin32 库
+
+## 安装
+
+### 方法一：通过 ClawHub 安装（推荐）
+
+```bash
+clawhub install outlook-pywin32
+```
+
+### 方法二：手动安装
+
+克隆或下载此项目
+
+## 安装依赖
+
+```bash
+pip install pywin32
+```
 
 ## 用法
 
@@ -23,28 +61,29 @@ python scripts/outlook-pywin32.py <方法名> --参数 值 --参数2 值2
 
 ### 邮件相关
 
-| 方法 | 说明 | 参数 |
-|------|------|------|
-| mail-folders | 检查并列出邮件文件夹 | --account |
-| mail-new | 创建邮件并保存到草稿箱 | --to, --subject, --body, --cc, --bcc |
-| mail-list | 列出邮件 | --folder, --limit, --account |
-| mail-read | 读取邮件 | --folder, --index, --account |
-| mail-search | 搜索邮件 | --query, --limit, --account, --start-time, --end-time |
-| account-list | 列出所有可用的Outlook账户 | 无 |
+| 方法           | 说明               | 参数                                                    |
+| ------------ | ---------------- | ----------------------------------------------------- |
+| mail-folders | 检查并列出邮件文件夹       | --account                                             |
+| mail-new     | 创建邮件并保存到草稿箱      | --to, --subject, --body, --cc, --bcc                  |
+| mail-list    | 列出邮件             | --folder, --limit, --account                          |
+| mail-read    | 读取邮件             | --folder, --index, --account                          |
+| mail-search  | 搜索邮件             | --query, --limit, --account, --start-time, --end-time |
+| account-list | 列出所有可用的Outlook账户 | 无                                                     |
 
 ### 日历相关
 
-| 方法 | 说明 | 参数 |
-|------|------|------|
-| calendar-list | 列出即将举行的日程安排事件 | --limit, --days, --include-today, --account |
-| calendar-new | 创建一个日程安排事件 | --subject, --start, --end, --location, --body, --required-attendees, --optional-attendees, --all-day, --reminder, --account |
+| 方法            | 说明                    | 参数                                                                                                                                                          |
+| ------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| calendar-list | 列出即将举行的日程安排事件         | --limit, --days, --include-today, --account                                                                                                                 |
+| calendar-new  | 创建一个日程安排事件            | --subject, --start, --end, --location, --body, --required-attendees, --optional-attendees, --all-day, --reminder, --account                                 |
+| calendar-edit | 修改一个日程安排事件（仅保存，不发送通知） | --subject, --start, --new-subject, --new-start, --new-end, --location, --body, --required-attendees, --optional-attendees, --all-day, --reminder, --account |
 
 ## 参数说明
 
 ### 通用参数
 
 - `--account`: 邮箱账户地址（可选）
-  - 优先级：1. 传入参数 2. 环境变量 OUTLOOK_ACCOUNT 3. config.json 文件
+  - 优先级：1. 传入参数 2. 环境变量 OUTLOOK\_ACCOUNT 3. config.json 文件
 
 ### 邮件相关参数
 
@@ -151,3 +190,4 @@ python scripts/outlook-pywin32.py calendar-new \
 # 创建一个全天事件
 python scripts/outlook-pywin32.py calendar-new --subject "公司年会" --start "2026-03-15" --all-day true --reminder 0
 ```
+

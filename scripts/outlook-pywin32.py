@@ -435,6 +435,9 @@ def calendar_list(limit: int = 10, days: int = 7, include_today: bool = True, ac
                 store = acc.DeliveryStore
                 calendar_folder = store.GetDefaultFolder(9)
                 break
+        else:
+            # 如果没有找到指定账户，使用默认文件夹
+            calendar_folder = namespace.GetDefaultFolder(9)
     else:
         calendar_folder = namespace.GetDefaultFolder(9)
     
@@ -556,8 +559,8 @@ def calendar_new(subject: str, start: str, end: str = "", location: str = "", bo
     appointment = outlook.CreateItem(1)  # 1 = AppointmentItem
     
     appointment.Subject = subject
-    appointment.Start = start_datetime
-    appointment.End = end_datetime
+    appointment.StartUTC = start_datetime
+    appointment.EndUTC = end_datetime
     appointment.AllDayEvent = all_day
     
     if location:
@@ -611,6 +614,186 @@ def calendar_new(subject: str, start: str, end: str = "", location: str = "", bo
     }
 
 
+def calendar_edit(subject: str = None, start: str = None, new_subject: str = None, new_start: str = None, new_end: str = None, location: str = None, body: str = None,
+                 required_attendees: str = None, optional_attendees: str = None, all_day: bool = None, reminder: int = None, account: str = None):
+    """
+    修改一个日程安排事件（仅保存，不发送通知）
+
+    参数:
+        --subject: 原日程主题 (可选，用于搜索)
+        --start: 原日程开始时间 (可选，用于搜索，格式: YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DD)
+        --new-subject: 新日程主题 (可选)
+        --new-start: 新开始时间 (可选，格式: YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DD)
+        --new-end: 新结束时间 (可选)
+        --location: 地点 (可选)
+        --body: 备注 (可选)
+        --required-attendees: 必需参与人 (可选，多个用分号分隔)
+        --optional-attendees: 可选参与人 (可选，多个用分号分隔)
+        --all-day: 是否全天事件 (可选，true/false)
+        --reminder: 提醒提前分钟数 (可选，0表示不提醒)
+        --account: 邮箱账户地址，优先级：1. 传入参数 2. 环境变量 OUTLOOK_ACCOUNT 3. config.json 文件
+    """
+    # 检查至少提供了一个搜索参数
+    if subject is None and start is None:
+        print("错误: 必须提供 subject 或 start 参数用于搜索日程")
+        return None
+    
+    outlook = get_outlook_app()
+    namespace = get_namespace(outlook)
+    account = get_account(account)
+    
+    # 获取日历文件夹
+    if account:
+        for acc in namespace.Accounts:
+            if acc.SmtpAddress.lower() == account.lower():
+                store = acc.DeliveryStore
+                calendar_folder = store.GetDefaultFolder(9)
+                break
+        else:
+            # 如果没有找到指定账户，使用默认文件夹
+            calendar_folder = namespace.GetDefaultFolder(9)
+    else:
+        calendar_folder = namespace.GetDefaultFolder(9)
+    
+    items = calendar_folder.Items
+    items.IncludeRecurrences = True
+    items.Sort("[Start]")
+    
+    # 解析搜索用的开始时间（如果提供）
+    search_start_datetime = None
+    if start:
+        search_start_dt = parse_date_for_outlook(start, is_start=True)
+        if not search_start_dt:
+            print(f"错误: 无法解析搜索开始时间 '{start}'")
+            return None
+        try:
+            search_start_datetime = datetime.datetime.strptime(search_start_dt, "%m/%d/%Y %H:%M:%S")
+        except ValueError:
+            print(f"错误: 时间格式无效 '{start}'")
+            return None
+    
+    # 找到匹配的日程
+    target_item = None
+    
+    for item in items:
+        try:
+            item_subject = item.Subject if hasattr(item, "Subject") else ""
+            item_start = None
+            
+            if hasattr(item, "Start"):
+                # 转换 Outlook datetime 对象为 Python datetime
+                start_str = str(item.Start)
+                try:
+                    # 尝试解析 Outlook 的日期时间格式
+                    if '+' in start_str:
+                        start_str = start_str.split('+')[0]
+                    if '.' in start_str and ' ' in start_str:
+                        start_str = start_str.split('.')[0]
+                    item_start = datetime.datetime.strptime(start_str, "%Y-%m-%d %H:%M:%S")
+                except:
+                    continue
+            
+            # 匹配条件：如果提供了subject则匹配subject，如果提供了start则匹配start时间
+            match = True
+            if subject:
+                match = match and (item_subject == subject)
+            if search_start_datetime and item_start:
+                # 比较开始时间（允许1分钟内的误差）
+                time_diff = abs((item_start - search_start_datetime).total_seconds())
+                match = match and (time_diff <= 60)
+            
+            if match:
+                target_item = item
+                break
+        except Exception:
+            continue
+    
+    if not target_item:
+        if subject and start:
+            print(f"错误: 未找到主题为 '{subject}' 且开始时间为 '{start}' 的日程")
+        elif subject:
+            print(f"错误: 未找到主题为 '{subject}' 的日程")
+        else:
+            print(f"错误: 未找到开始时间为 '{start}' 的日程")
+        return None
+    
+    # 修改日程属性
+    if new_subject is not None:
+        target_item.Subject = new_subject
+    
+    if new_start is not None:
+        start_dt = parse_date_for_outlook(new_start, is_start=True)
+        if not start_dt:
+            print(f"错误: 无法解析开始时间 '{new_start}'")
+            return None
+        try:
+            start_datetime = datetime.datetime.strptime(start_dt, "%m/%d/%Y %H:%M:%S")
+            target_item.StartUTC = start_datetime
+        except ValueError:
+            print(f"错误: 时间格式无效 '{new_start}'")
+            return None
+    
+    if new_end is not None:
+        end_dt = parse_date_for_outlook(new_end, is_start=False)
+        if not end_dt:
+            print(f"错误: 无法解析结束时间 '{new_end}'")
+            return None
+        try:
+            end_datetime = datetime.datetime.strptime(end_dt, "%m/%d/%Y %H:%M:%S")
+            target_item.EndUTC = end_datetime
+        except ValueError:
+            print(f"错误: 时间格式无效 '{new_end}'")
+            return None
+    
+    if location is not None:
+        target_item.Location = location
+    
+    if body is not None:
+        target_item.Body = body
+    
+    if required_attendees is not None:
+        target_item.RequiredAttendees = required_attendees
+    
+    if optional_attendees is not None:
+        target_item.OptionalAttendees = optional_attendees
+    
+    if all_day is not None:
+        target_item.AllDayEvent = all_day
+    
+    if reminder is not None:
+        if reminder > 0:
+            target_item.ReminderSet = True
+            target_item.ReminderMinutesBeforeStart = reminder
+        else:
+            target_item.ReminderSet = False
+    
+    # 保存修改（不发送通知）
+    target_item.Save()
+    
+    # 获取修改后的日程信息
+    modified_subject = target_item.Subject if hasattr(target_item, "Subject") else ""
+    modified_start = str(target_item.Start) if hasattr(target_item, "Start") else ""
+    modified_end = str(target_item.End) if hasattr(target_item, "End") else ""
+    modified_location = target_item.Location if hasattr(target_item, "Location") else ""
+    modified_all_day = target_item.AllDayEvent if hasattr(target_item, "AllDayEvent") else False
+    
+    print(f"日程已修改: {modified_subject}")
+    print(f"  时间: {modified_start} - {modified_end}")
+    if modified_all_day:
+        print("  全天事件: 是")
+    if modified_location:
+        print(f"  地点: {modified_location}")
+    
+    return {
+        "success": True,
+        "subject": modified_subject,
+        "start": modified_start,
+        "end": modified_end,
+        "location": modified_location,
+        "all_day": modified_all_day,
+    }
+
+
 # ============ 方法注册表 ============
 
 METHODS = {
@@ -622,6 +805,7 @@ METHODS = {
     "account-list": account_list,
     "calendar-list": calendar_list,
     "calendar-new": calendar_new,
+    "calendar-edit": calendar_edit,
 }
 
 
@@ -652,8 +836,12 @@ def parse_args():
             continue
         arg_name = f"--{param_name.replace('_', '-')}"
         default = param.default if param.default != inspect.Parameter.empty else None
-        # account、start_time、end_time 参数即使默认值是 None 也不需要是必需的
-        required = default is None and param_name not in ("account", "start_time", "end_time")
+        # 对于 calendar-edit 方法，所有参数都是可选的，但至少需要提供 subject 或 start 中的一个
+        if method_name == "calendar-edit":
+            required = False
+        else:
+            # 其他方法中，account、start_time、end_time 参数即使默认值是 None 也不需要是必需的
+            required = default is None and param_name not in ("account", "start_time", "end_time")
 
         parser.add_argument(
             arg_name,

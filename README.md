@@ -10,19 +10,20 @@
   - 读取指定邮件内容
   - 搜索邮件（支持关键词和时间范围）
   - 列出所有邮件文件夹
-
 - ✅ **日历管理**
   - 列出即将举行的日程安排事件
   - 创建日程安排事件
+  - 修改日程安排事件（仅保存，不发送通知）
   - 支持必需/可选参与人
   - 支持全天事件
   - 支持提醒设置
-
 - ✅ **账户管理**
   - 列出所有可用的 Outlook 邮箱账户
   - 支持多账户切换
 
 ## 前提条件
+
+无论使用哪种安装方法，都需要满足以下条件：
 
 - Windows 系统
 - 已安装 Outlook 客户端
@@ -31,9 +32,18 @@
 
 ## 安装
 
-1. 克隆或下载此项目
+### 方法一：通过 ClawHub 安装（推荐）
 
-2. 安装依赖：
+```bash
+clawhub install outlook-pywin32
+```
+
+### 方法二：手动安装
+
+克隆或下载此项目
+
+## 安装依赖
+
 ```bash
 pip install pywin32
 ```
@@ -128,6 +138,12 @@ python scripts/outlook-pywin32.py calendar-new \
 
 # 创建全天事件
 python scripts/outlook-pywin32.py calendar-new --subject "公司年会" --start "2026-03-15" --all-day true
+
+# 修改日程（通过主题搜索）
+python scripts/outlook-pywin32.py calendar-edit --subject "团队会议" --new-subject "团队会议（已修改）" --location "新会议室"
+
+# 修改日程（通过开始时间搜索）
+python scripts/outlook-pywin32.py calendar-edit --start "2026-03-14 10:00:00" --new-start "2026-03-14 10:30:00" --new-end "2026-03-14 12:00:00"
 ```
 
 ## 项目结构
@@ -156,3 +172,4 @@ outlook-pywin32/
 - 需要本地安装 Outlook 客户端
 - 首次运行时，Outlook 可能会弹出安全警告，需要允许访问
 - 可能需要管理权限
+
