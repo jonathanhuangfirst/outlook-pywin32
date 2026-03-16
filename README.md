@@ -20,6 +20,8 @@
 - ✅ **账户管理**
   - 列出所有可用的 Outlook 邮箱账户
   - 支持多账户切换
+- ✅ **文件夹管理**
+  - 列出所有默认文件夹
 
 ## 前提条件
 
@@ -151,10 +153,17 @@ python scripts/outlook-pywin32.py calendar-edit --start "2026-03-14 10:00:00" --
 ```
 outlook-pywin32/
 ├── scripts/
-│   ├── outlook-pywin32.py  # 主程序
-│   └── config.json          # 配置文件（可选）
-├── SKILL.md                 # 详细使用文档
-├── README.md                # 本文件
+│   ├── outlook-pywin32.py      # 主程序入口
+│   ├── config.json              # 配置文件（可选）
+│   └── outlook_pywin32/
+│       ├── __init__.py
+│       ├── utils.py             # 公共工具函数
+│       ├── account.py           # 账户相关方法
+│       ├── mail.py              # 邮件相关方法
+│       ├── calendar.py          # 日历相关方法
+│       └── folder.py            # 文件夹相关方法
+├── SKILL.md                     # 详细使用文档
+├── README.md                    # 本文件
 └── ...
 ```
 

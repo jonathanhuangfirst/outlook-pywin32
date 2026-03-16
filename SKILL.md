@@ -1,12 +1,20 @@
 ***
 
 name: outlook-pywin32
-description: "通过pywin32本地操作Outlook的命令行工具。支持邮件管理、日历管理等功能。使用命令: outlook-pywin32.py <方法名> --参数 值"
+description: "通过pywin32本地操作Outlook的命令行工具。支持邮件管理、日历管理、账户管理和文件夹管理等功能。使用命令: outlook-pywin32.py <方法名> --参数 值"
 ----------------------------------------------------------------------------------------------
 
 # Outlook PyWin32 命令行工具
 
 ## 版本更新
+
+### v0.8
+
+**新增功能：**
+
+- 重构代码结构，将功能模块拆分为独立文件
+- 添加 `folder-list` 方法，支持列出所有默认文件夹
+- 优化代码组织，提高可维护性
 
 ### v0.7
 
@@ -69,6 +77,12 @@ python scripts/outlook-pywin32.py <方法名> --参数 值 --参数2 值2
 | mail-read    | 读取邮件             | --folder, --index, --account                          |
 | mail-search  | 搜索邮件             | --query, --limit, --account, --start-time, --end-time |
 | account-list | 列出所有可用的Outlook账户 | 无                                                     |
+
+### 文件夹相关
+
+| 方法           | 说明               | 参数                                                    |
+| ------------ | ---------------- | ----------------------------------------------------- |
+| folder-list  | 列出所有默认文件夹       | --account                                             |
 
 ### 日历相关
 
@@ -189,5 +203,15 @@ python scripts/outlook-pywin32.py calendar-new \
 
 # 创建一个全天事件
 python scripts/outlook-pywin32.py calendar-new --subject "公司年会" --start "2026-03-15" --all-day true --reminder 0
+```
+
+### 文件夹相关示例
+
+```bash
+# 列出所有默认文件夹
+python scripts/outlook-pywin32.py folder-list
+
+# 列出指定账户的默认文件夹
+python scripts/outlook-pywin32.py folder-list --account xx@cuhk.edu.cn
 ```
 
